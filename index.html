@@ -101,6 +101,12 @@
   .add-form select option { background: var(--surface2); }
   .btn-add { background: var(--blue-dim); border: 1px solid var(--blue); border-radius: 8px; padding: 7px 18px; font-size: 13px; color: var(--blue); cursor: pointer; font-family: var(--sans); white-space: nowrap; transition: all 0.2s; }
   .btn-add:hover { background: rgba(79,142,247,0.25); }
+  .btn-cancel-edit { background: transparent; border: 1px solid var(--border); border-radius: 8px; padding: 7px 14px; font-size: 13px; color: var(--muted); cursor: pointer; font-family: var(--sans); white-space: nowrap; transition: color 0.2s; }
+  .btn-cancel-edit:hover { color: var(--text); }
+  .btn-add.editing { background: var(--amber-dim); border-color: var(--amber); color: var(--amber); }
+  .btn-add.editing:hover { background: rgba(245,166,35,0.25); }
+  .block-item { cursor: pointer; }
+  .block-item.selected { outline: 1.5px solid var(--amber); outline-offset: -1px; }
 
   .grid-area { display: flex; gap: 0; flex: 1; min-height: 0; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius); }
   .time-axis { width: 52px; flex-shrink: 0; display: flex; flex-direction: column; padding: 0; border-right: 1px solid var(--border); background: var(--surface); }
@@ -208,7 +214,8 @@
         <option value="rest">휴식·식사</option>
         <option value="etc">기타</option>
       </select>
-      <button class="btn-add" onclick="addBlock()">+ 추가</button>
+      <button class="btn-add" id="addBtn" onclick="addOrUpdateBlock()">+ 추가</button>
+      <button class="btn-cancel-edit" id="cancelEditBtn" onclick="cancelEdit()" style="display:none">취소</button>
     </div>
 
     <div class="grid-area" id="gridArea">
@@ -319,6 +326,7 @@ const HOUR_H = 44, START_H = 6, END_H = 24;
 const CAT_COLORS = { work:'#4f8ef7', personal:'#3ecf8e', rest:'#f5a623', etc:'#a78bfa' };
 const CAT_BG = { work:'rgba(79,142,247,0.12)', personal:'rgba(62,207,142,0.12)', rest:'rgba(245,166,35,0.12)', etc:'rgba(167,139,250,0.12)' };
 let blocks = [];
+let editingId = null;
 
 function initPlanner(){
   const now=new Date();
@@ -346,15 +354,48 @@ function toMins(t){ const [h,m]=t.split(':').map(Number); return h*60+m; }
 function toTop(m){ return ((m-START_H*60)/60)*HOUR_H; }
 function fmtDur(m){ const h=Math.floor(m/60),mn=m%60; return h?mn?h+'h '+mn+'m':h+'h':mn+'m'; }
 
-function addBlock(){
+function addOrUpdateBlock(){
   const s=document.getElementById('blockStart').value;
   const e=document.getElementById('blockEnd').value;
   const n=document.getElementById('blockTask').value.trim();
   const c=document.getElementById('blockCat').value;
   if(!n){ notify('할 일을 입력해 주세요'); return; }
   if(toMins(s)>=toMins(e)){ notify('종료 시간이 시작보다 늦어야 해요'); return; }
-  blocks.push({id:Math.random(),start:s,end:e,name:n,cat:c});
+  if(editingId!==null){
+    const b=blocks.find(b=>b.id===editingId);
+    if(b){ b.start=s; b.end=e; b.name=n; b.cat=c; }
+    cancelEdit();
+    notify('일정이 수정되었습니다');
+  } else {
+    blocks.push({id:Math.random(),start:s,end:e,name:n,cat:c});
+    document.getElementById('blockTask').value='';
+  }
+  renderBlocks();
+}
+
+function startEdit(id){
+  const b=blocks.find(b=>b.id===id);
+  if(!b) return;
+  editingId=id;
+  document.getElementById('blockStart').value=b.start;
+  document.getElementById('blockEnd').value=b.end;
+  document.getElementById('blockTask').value=b.name;
+  document.getElementById('blockCat').value=b.cat;
+  const btn=document.getElementById('addBtn');
+  btn.textContent='수정 완료';
+  btn.classList.add('editing');
+  document.getElementById('cancelEditBtn').style.display='';
+  document.getElementById('blockTask').focus();
+  renderBlocks();
+}
+
+function cancelEdit(){
+  editingId=null;
   document.getElementById('blockTask').value='';
+  const btn=document.getElementById('addBtn');
+  btn.textContent='+ 추가';
+  btn.classList.remove('editing');
+  document.getElementById('cancelEditBtn').style.display='none';
   renderBlocks();
 }
 
@@ -367,11 +408,13 @@ function renderBlocks(){
     const top=toTop(sm), h=((em-sm)/60)*HOUR_H;
     const div=document.createElement('div'); div.className='block-item';
     div.style.cssText=`top:${top}px;height:${Math.max(h-3,18)}px;background:${CAT_BG[b.cat]};border-left-color:${CAT_COLORS[b.cat]};color:${CAT_COLORS[b.cat]};`;
+    if(editingId===b.id) div.classList.add('selected');
+    div.onclick=(e)=>{ if(!e.target.classList.contains('block-del')) startEdit(b.id); };
     const lbl=document.createElement('span'); lbl.className='block-label';
     lbl.textContent=b.start+' '+b.name;
     const del=document.createElement('button'); del.className='block-del';
     del.textContent='×'; del.style.color=CAT_COLORS[b.cat];
-    del.onclick=()=>deleteBlock(b.id);
+    del.onclick=(e)=>{ e.stopPropagation(); deleteBlock(b.id); };
     div.appendChild(lbl); div.appendChild(del);
     layer.appendChild(div);
   });
