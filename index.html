@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Focus Planner — 뽀모도로 + 시간 블록</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Pretendard:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f11;
+    --surface: #18181c;
+    --surface2: #222228;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0f0f0;
+    --muted: #888;
+    --faint: #444;
+    --blue: #4f8ef7;
+    --blue-dim: rgba(79,142,247,0.15);
+    --green: #3ecf8e;
+    --green-dim: rgba(62,207,142,0.15);
+    --amber: #f5a623;
+    --amber-dim: rgba(245,166,35,0.15);
+    --purple: #a78bfa;
+    --purple-dim: rgba(167,139,250,0.15);
+    --red: #f06060;
+    --radius: 10px;
+    --mono: 'DM Mono', monospace;
+    --sans: 'Pretendard', -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; }
+
+  /* Layout */
+  .app { display: grid; grid-template-columns: 320px 1fr; min-height: 100vh; }
+  .left-panel { border-right: 1px solid var(--border); padding: 28px 24px; display: flex; flex-direction: column; gap: 28px; }
+  .right-panel { padding: 28px 28px; display: flex; flex-direction: column; gap: 20px; overflow: hidden; }
+
+  /* Header */
+  .app-title { font-size: 13px; font-family: var(--mono); color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; background: var(--surface); border-radius: var(--radius); padding: 4px; }
+  .tab { flex: 1; padding: 7px 0; font-size: 12px; font-family: var(--mono); text-align: center; border: none; background: transparent; color: var(--muted); border-radius: 7px; cursor: pointer; transition: all 0.2s; }
+  .tab.active { background: var(--surface2); color: var(--text); }
+
+  /* Pomodoro */
+  .pomo-section { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+  .pomo-task-row { width: 100%; display: flex; gap: 6px; }
+  .pomo-task-row input { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 13px; color: var(--text); font-family: var(--sans); outline: none; }
+  .pomo-task-row input:focus { border-color: var(--border2); }
+  .pomo-task-row button { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 12px; color: var(--muted); cursor: pointer; white-space: nowrap; font-family: var(--sans); transition: color 0.2s; }
+  .pomo-task-row button:hover { color: var(--text); }
+  .mode-row { display: flex; gap: 4px; width: 100%; }
+  .mode-btn { flex: 1; padding: 5px 0; font-size: 11px; font-family: var(--mono); border: 1px solid var(--border); border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; transition: all 0.2s; }
+  .mode-btn.active { border-color: var(--blue); color: var(--blue); background: var(--blue-dim); }
+  .timer-wrap { position: relative; width: 160px; height: 160px; }
+  .timer-wrap svg { transform: rotate(-90deg); }
+  .timer-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+  .timer-digits { font-family: var(--mono); font-size: 36px; font-weight: 500; color: var(--text); letter-spacing: -1px; }
+  .timer-mode-lbl { font-size: 10px; font-family: var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+  .timer-btns { display: flex; gap: 8px; }
+  .btn-start { background: var(--blue-dim); border: 1px solid var(--blue); border-radius: 8px; padding: 9px 28px; font-size: 14px; font-weight: 500; color: var(--blue); cursor: pointer; font-family: var(--sans); transition: all 0.2s; }
+  .btn-start:hover { background: rgba(79,142,247,0.25); }
+  .btn-reset { background: transparent; border: 1px solid var(--border); border-radius: 8px; padding: 9px 14px; font-size: 14px; color: var(--muted); cursor: pointer; font-family: var(--sans); transition: color 0.2s; }
+  .btn-reset:hover { color: var(--text); }
+  .dots-row { display: flex; gap: 6px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--faint); transition: all 0.3s; }
+  .dot.done { background: var(--blue); border-color: var(--blue); }
+  .pomo-current-task { font-size: 12px; color: var(--muted); font-family: var(--mono); text-align: center; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-height: 16px; }
+
+  /* Stats strip */
+  .stats-strip { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; width: 100%; }
+  .stat-cell { background: var(--surface); border-radius: 8px; padding: 8px; text-align: center; }
+  .stat-val { font-family: var(--mono); font-size: 17px; font-weight: 500; color: var(--text); }
+  .stat-lbl { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  /* Log */
+  .log-head { font-size: 11px; font-family: var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+  .log-list { list-style: none; display: flex; flex-direction: column; gap: 5px; max-height: 140px; overflow-y: auto; }
+  .log-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: var(--surface); border-radius: 7px; font-size: 12px; }
+  .log-badge { font-size: 10px; font-family: var(--mono); padding: 2px 7px; border-radius: 4px; white-space: nowrap; }
+  .badge-focus { background: var(--blue-dim); color: var(--blue); }
+  .badge-break { background: var(--green-dim); color: var(--green); }
+  .log-name { flex: 1; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .log-time { font-family: var(--mono); font-size: 10px; color: var(--faint); }
+  .log-empty { font-size: 12px; color: var(--faint); text-align: center; padding: 16px 0; font-family: var(--mono); }
+
+  /* Planner */
+  .planner-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+  .planner-date { font-family: var(--mono); font-size: 14px; color: var(--text); }
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; }
+  .leg { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+  .leg-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+  .add-form { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .add-form input[type=time] { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; font-size: 12px; font-family: var(--mono); color: var(--text); outline: none; width: 100px; }
+  .add-form input[type=text] { flex: 1; min-width: 140px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 7px 12px; font-size: 13px; color: var(--text); font-family: var(--sans); outline: none; }
+  .add-form input:focus { border-color: var(--border2); }
+  .add-form select { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; font-size: 12px; color: var(--text); font-family: var(--sans); outline: none; cursor: pointer; }
+  .add-form select option { background: var(--surface2); }
+  .btn-add { background: var(--blue-dim); border: 1px solid var(--blue); border-radius: 8px; padding: 7px 18px; font-size: 13px; color: var(--blue); cursor: pointer; font-family: var(--sans); white-space: nowrap; transition: all 0.2s; }
+  .btn-add:hover { background: rgba(79,142,247,0.25); }
+
+  .grid-area { display: flex; gap: 0; flex: 1; min-height: 0; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius); }
+  .time-axis { width: 52px; flex-shrink: 0; display: flex; flex-direction: column; padding: 0; border-right: 1px solid var(--border); background: var(--surface); }
+  .t-tick { height: 44px; display: flex; align-items: flex-start; padding: 3px 8px 0; font-family: var(--mono); font-size: 10px; color: var(--faint); flex-shrink: 0; }
+  .blocks-area { flex: 1; position: relative; overflow-y: auto; overflow-x: hidden; background: var(--bg); }
+  .hour-line { height: 44px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .hour-lines { position: absolute; inset: 0; }
+  .block-layer { position: absolute; inset: 0; pointer-events: none; }
+  .block-item { position: absolute; left: 6px; right: 6px; border-radius: 6px; padding: 4px 8px; font-size: 11px; font-family: var(--mono); overflow: hidden; display: flex; align-items: center; justify-content: space-between; pointer-events: all; cursor: default; border-left: 3px solid transparent; }
+  .block-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+  .block-del { opacity: 0; background: none; border: none; cursor: pointer; font-size: 14px; padding: 0 2px; line-height: 1; transition: opacity 0.15s; }
+  .block-item:hover .block-del { opacity: 0.6; }
+  .now-line { position: absolute; left: 0; right: 0; height: 1.5px; background: var(--red); z-index: 5; pointer-events: none; }
+  .now-dot { position: absolute; left: -4px; top: -4px; width: 9px; height: 9px; border-radius: 50%; background: var(--red); }
+
+  .summary-strip { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+  .sum-cell { background: var(--surface); border-radius: 8px; padding: 10px; text-align: center; }
+  .sum-val { font-family: var(--mono); font-size: 16px; font-weight: 500; }
+  .sum-lbl { font-size: 10px; color: var(--muted); margin-top: 3px; }
+
+  .notify { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--surface2); border: 1px solid var(--border2); border-radius: 10px; padding: 10px 20px; font-size: 13px; font-family: var(--mono); color: var(--text); z-index: 100; display: none; white-space: nowrap; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 2px; }
+
+  @media (max-width: 680px) {
+    .app { grid-template-columns: 1fr; }
+    .left-panel { border-right: none; border-bottom: 1px solid var(--border); }
+    .grid-area { min-height: 340px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- LEFT: Pomodoro -->
+  <div class="left-panel">
+    <div class="app-title">Focus Planner</div>
+
+    <div class="pomo-section">
+      <div class="pomo-task-row">
+        <input type="text" id="pomoTaskInput" placeholder="지금 할 일..." />
+        <button onclick="setPomoTask()">설정</button>
+      </div>
+      <div class="mode-row">
+        <button class="mode-btn active" onclick="switchMode('focus',this)">집중 25분</button>
+        <button class="mode-btn" onclick="switchMode('short',this)">휴식 5분</button>
+        <button class="mode-btn" onclick="switchMode('long',this)">긴휴식 15분</button>
+      </div>
+      <div class="pomo-current-task" id="pomoTaskLabel">할 일을 설정해 주세요</div>
+      <div class="timer-wrap">
+        <svg width="160" height="160" viewBox="0 0 160 160">
+          <circle cx="80" cy="80" r="68" fill="none" stroke="#222228" stroke-width="6"/>
+          <circle id="progCircle" cx="80" cy="80" r="68" fill="none" stroke="#4f8ef7" stroke-width="6"
+            stroke-linecap="round" stroke-dasharray="427.26" stroke-dashoffset="0"
+            style="transition:stroke-dashoffset 0.9s linear,stroke 0.3s"/>
+        </svg>
+        <div class="timer-center">
+          <div class="timer-digits" id="timerDigits">25:00</div>
+          <div class="timer-mode-lbl" id="timerModeLbl">집중</div>
+        </div>
+      </div>
+      <div class="timer-btns">
+        <button class="btn-start" id="startBtn" onclick="toggleTimer()">시작</button>
+        <button class="btn-reset" onclick="resetTimer()">↺</button>
+      </div>
+      <div class="dots-row" id="dotsRow"></div>
+    </div>
+
+    <div class="stats-strip">
+      <div class="stat-cell"><div class="stat-val" id="sPomos">0</div><div class="stat-lbl">뽀모도로</div></div>
+      <div class="stat-cell"><div class="stat-val" id="sFocus">0분</div><div class="stat-lbl">집중</div></div>
+      <div class="stat-cell"><div class="stat-val" id="sBreak">0분</div><div class="stat-lbl">휴식</div></div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div class="log-head">오늘의 기록</div>
+      <ul class="log-list" id="logList">
+        <li class="log-empty">타이머를 시작해 보세요</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- RIGHT: Planner -->
+  <div class="right-panel">
+    <div class="planner-header">
+      <div class="planner-date" id="plannerDate"></div>
+      <div class="legend">
+        <div class="leg"><div class="leg-dot" style="background:#4f8ef7"></div>업무·집중</div>
+        <div class="leg"><div class="leg-dot" style="background:#3ecf8e"></div>개인·운동</div>
+        <div class="leg"><div class="leg-dot" style="background:#f5a623"></div>휴식·식사</div>
+        <div class="leg"><div class="leg-dot" style="background:#a78bfa"></div>기타</div>
+      </div>
+    </div>
+
+    <div class="add-form">
+      <input type="time" id="blockStart" value="09:00" />
+      <input type="time" id="blockEnd" value="10:00" />
+      <input type="text" id="blockTask" placeholder="할 일 입력..." />
+      <select id="blockCat">
+        <option value="work">업무·집중</option>
+        <option value="personal">개인·운동</option>
+        <option value="rest">휴식·식사</option>
+        <option value="etc">기타</option>
+      </select>
+      <button class="btn-add" onclick="addBlock()">+ 추가</button>
+    </div>
+
+    <div class="grid-area" id="gridArea">
+      <div class="time-axis" id="timeAxis"></div>
+      <div class="blocks-area" id="blocksArea">
+        <div class="hour-lines" id="hourLines"></div>
+        <div id="nowLineEl"></div>
+        <div class="block-layer" id="blockLayer"></div>
+      </div>
+    </div>
+
+    <div class="summary-strip">
+      <div class="sum-cell"><div class="sum-val" style="color:#4f8ef7" id="sumWork">0h</div><div class="sum-lbl">업무·집중</div></div>
+      <div class="sum-cell"><div class="sum-val" style="color:#3ecf8e" id="sumPersonal">0h</div><div class="sum-lbl">개인·운동</div></div>
+      <div class="sum-cell"><div class="sum-val" style="color:#f5a623" id="sumRest">0h</div><div class="sum-lbl">휴식·식사</div></div>
+      <div class="sum-cell"><div class="sum-val" style="color:#a78bfa" id="sumEtc">0h</div><div class="sum-lbl">기타</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="notify" id="notify"></div>
+
+<script>
+// ——— POMODORO ———
+const MODES = { focus:1500, short:300, long:900 };
+const COLORS = { focus:'#4f8ef7', short:'#3ecf8e', long:'#f5a623' };
+const CIRCUM = 2 * Math.PI * 68;
+let mode = 'focus', remaining = 1500, totalSecs = 1500;
+let running = false, interval = null;
+let pomoTask = '', pomosCount = 0, totalFocus = 0, totalBreak = 0;
+
+function pad(n){ return String(n).padStart(2,'0'); }
+function fmt(s){ return pad(Math.floor(s/60))+':'+pad(s%60); }
+
+function renderTimer(){
+  document.getElementById('timerDigits').textContent = fmt(remaining);
+  const frac = remaining / totalSecs;
+  const c = document.getElementById('progCircle');
+  c.style.strokeDashoffset = CIRCUM * (1 - frac);
+  c.style.stroke = COLORS[mode];
+  document.getElementById('startBtn').textContent = running ? '일시정지' : (remaining < totalSecs && remaining > 0 ? '재개' : '시작');
+  document.getElementById('timerModeLbl').textContent = mode==='focus'?'집중':mode==='short'?'휴식':'긴 휴식';
+}
+
+function renderDots(){
+  const r = document.getElementById('dotsRow'); r.innerHTML='';
+  for(let i=0;i<4;i++){
+    const d=document.createElement('div');
+    d.className='dot'+(i<pomosCount%4?' done':'');
+    r.appendChild(d);
+  }
+}
+
+function setPomoTask(){
+  const v=document.getElementById('pomoTaskInput').value.trim();
+  if(!v) return;
+  pomoTask=v;
+  document.getElementById('pomoTaskLabel').textContent='▸ '+v;
+}
+
+function switchMode(m, el){
+  if(running) return;
+  mode=m; totalSecs=MODES[m]; remaining=MODES[m];
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderTimer();
+}
+
+function toggleTimer(){
+  if(running){ clearInterval(interval); running=false; renderTimer(); }
+  else { if(remaining===0) return; running=true; interval=setInterval(tick,1000); renderTimer(); }
+}
+
+function tick(){
+  remaining--;
+  renderTimer();
+  if(remaining<=0){ finishSession(); }
+}
+
+function finishSession(){
+  clearInterval(interval); running=false;
+  if(mode==='focus'){ pomosCount++; totalFocus+=MODES.focus; addLog('집중',pomoTask||'(할 일 없음)'); }
+  else { totalBreak+=MODES[mode]; addLog('휴식',mode==='short'?'짧은 휴식':'긴 휴식'); }
+  renderDots(); updateStats();
+  notify(mode==='focus'?'🍅 집중 완료! 잠깐 쉬어가세요.':'✅ 휴식 끝! 다시 집중해볼까요?');
+  remaining=0; renderTimer();
+}
+
+function resetTimer(){ clearInterval(interval); running=false; remaining=totalSecs; renderTimer(); }
+
+function addLog(type, label){
+  const ul=document.getElementById('logList');
+  const emp=ul.querySelector('.log-empty'); if(emp) emp.remove();
+  const now=new Date();
+  const li=document.createElement('li'); li.className='log-item';
+  li.innerHTML=`<span class="log-badge ${type==='집중'?'badge-focus':'badge-break'}">${type}</span><span class="log-name">${label}</span><span class="log-time">${pad(now.getHours())}:${pad(now.getMinutes())}</span>`;
+  ul.insertBefore(li, ul.firstChild);
+}
+
+function updateStats(){
+  document.getElementById('sPomos').textContent=pomosCount;
+  document.getElementById('sFocus').textContent=Math.round(totalFocus/60)+'분';
+  document.getElementById('sBreak').textContent=Math.round(totalBreak/60)+'분';
+}
+
+// ——— PLANNER ———
+const HOUR_H = 44, START_H = 6, END_H = 24;
+const CAT_COLORS = { work:'#4f8ef7', personal:'#3ecf8e', rest:'#f5a623', etc:'#a78bfa' };
+const CAT_BG = { work:'rgba(79,142,247,0.12)', personal:'rgba(62,207,142,0.12)', rest:'rgba(245,166,35,0.12)', etc:'rgba(167,139,250,0.12)' };
+let blocks = [];
+
+function initPlanner(){
+  const now=new Date();
+  const days=['일','월','화','수','목','금','토'];
+  document.getElementById('plannerDate').textContent=
+    now.getFullYear()+'년 '+(now.getMonth()+1)+'월 '+now.getDate()+'일 ('+days[now.getDay()]+')';
+  const axis=document.getElementById('timeAxis');
+  const lines=document.getElementById('hourLines');
+  for(let h=START_H;h<=END_H;h++){
+    const t=document.createElement('div'); t.className='t-tick';
+    t.textContent=h<END_H?(h<10?'0'+h+':00':h+':00'):'';
+    axis.appendChild(t);
+    if(h<END_H){ const l=document.createElement('div'); l.className='hour-line'; lines.appendChild(l); }
+  }
+  // default blocks
+  [['07:00','07:30','아침 준비','rest'],['09:00','12:00','업무 집중','work'],
+   ['12:00','13:00','점심 식사','rest'],['13:00','15:00','회의·행정','work'],
+   ['15:00','15:30','짧은 휴식','rest'],['15:30','18:00','집중 업무 2','work']]
+   .forEach(b=>blocks.push({id:Math.random(),start:b[0],end:b[1],name:b[2],cat:b[3]}));
+  renderBlocks(); drawNow();
+  setInterval(drawNow, 60000);
+}
+
+function toMins(t){ const [h,m]=t.split(':').map(Number); return h*60+m; }
+function toTop(m){ return ((m-START_H*60)/60)*HOUR_H; }
+function fmtDur(m){ const h=Math.floor(m/60),mn=m%60; return h?mn?h+'h '+mn+'m':h+'h':mn+'m'; }
+
+function addBlock(){
+  const s=document.getElementById('blockStart').value;
+  const e=document.getElementById('blockEnd').value;
+  const n=document.getElementById('blockTask').value.trim();
+  const c=document.getElementById('blockCat').value;
+  if(!n){ notify('할 일을 입력해 주세요'); return; }
+  if(toMins(s)>=toMins(e)){ notify('종료 시간이 시작보다 늦어야 해요'); return; }
+  blocks.push({id:Math.random(),start:s,end:e,name:n,cat:c});
+  document.getElementById('blockTask').value='';
+  renderBlocks();
+}
+
+function deleteBlock(id){ blocks=blocks.filter(b=>b.id!==id); renderBlocks(); }
+
+function renderBlocks(){
+  const layer=document.getElementById('blockLayer'); layer.innerHTML='';
+  blocks.forEach(b=>{
+    const sm=toMins(b.start), em=toMins(b.end);
+    const top=toTop(sm), h=((em-sm)/60)*HOUR_H;
+    const div=document.createElement('div'); div.className='block-item';
+    div.style.cssText=`top:${top}px;height:${Math.max(h-3,18)}px;background:${CAT_BG[b.cat]};border-left-color:${CAT_COLORS[b.cat]};color:${CAT_COLORS[b.cat]};`;
+    const lbl=document.createElement('span'); lbl.className='block-label';
+    lbl.textContent=b.start+' '+b.name;
+    const del=document.createElement('button'); del.className='block-del';
+    del.textContent='×'; del.style.color=CAT_COLORS[b.cat];
+    del.onclick=()=>deleteBlock(b.id);
+    div.appendChild(lbl); div.appendChild(del);
+    layer.appendChild(div);
+  });
+  updateSummary();
+}
+
+function drawNow(){
+  const now=new Date();
+  const m=now.getHours()*60+now.getMinutes();
+  const el=document.getElementById('nowLineEl');
+  if(m<START_H*60||m>END_H*60){ el.innerHTML=''; return; }
+  el.innerHTML=`<div class="now-line" style="top:${toTop(m)}px"><div class="now-dot"></div></div>`;
+}
+
+function updateSummary(){
+  const t={work:0,personal:0,rest:0,etc:0};
+  blocks.forEach(b=>{ t[b.cat]+=toMins(b.end)-toMins(b.start); });
+  document.getElementById('sumWork').textContent=fmtDur(t.work);
+  document.getElementById('sumPersonal').textContent=fmtDur(t.personal);
+  document.getElementById('sumRest').textContent=fmtDur(t.rest);
+  document.getElementById('sumEtc').textContent=fmtDur(t.etc);
+}
+
+function notify(msg){
+  const el=document.getElementById('notify');
+  el.textContent=msg; el.style.display='block';
+  setTimeout(()=>{ el.style.display='none'; },3500);
+}
+
+// Init
+renderTimer(); renderDots(); initPlanner();
+</script>
+</body>
+</html>
