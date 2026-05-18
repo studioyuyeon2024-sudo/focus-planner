@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#0f0f11"/>
+  <circle cx="256" cy="280" r="148" fill="none" stroke="#222228" stroke-width="28"/>
+  <circle cx="256" cy="280" r="148" fill="none" stroke="#4f8ef7" stroke-width="28"
+    stroke-linecap="round" stroke-dasharray="697" stroke-dashoffset="232"
+    transform="rotate(-90 256 280)"/>
+  <rect x="232" y="60" width="48" height="36" rx="6" fill="#3ecf8e"/>
+  <rect x="244" y="44" width="24" height="28" rx="4" fill="#3ecf8e"/>
+  <text x="256" y="296" text-anchor="middle" font-family="DM Mono, monospace" font-weight="500"
+    font-size="68" fill="#f0f0f0" letter-spacing="-2">25</text>
+  <text x="256" y="346" text-anchor="middle" font-family="DM Mono, monospace"
+    font-size="22" fill="#888" letter-spacing="2">FOCUS</text>
+</svg>

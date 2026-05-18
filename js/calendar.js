@@ -1,7 +1,7 @@
 // Calendar view: month grid + per-day detail panel.
 import { state } from './state.js';
 import * as repo from './repo.js';
-import { notify, isoDate, parseIsoDate, koDateLabel, fmtDur, debounce, el, clear, on, pad, fromMins } from './ui.js';
+import { notify, isoDate, parseIsoDate, koDateLabel, fmtDur, debounce, el, clear, on, pad, fromMins, haptic } from './ui.js';
 
 const CAT_COLORS = { work: '#4f8ef7', personal: '#3ecf8e', rest: '#f5a623', etc: '#a78bfa' };
 const CAT_BG = { work: 'rgba(79,142,247,0.18)', personal: 'rgba(62,207,142,0.18)', rest: 'rgba(245,166,35,0.18)', etc: 'rgba(167,139,250,0.18)' };
@@ -172,11 +172,17 @@ function summarizeDay(iso) {
 
 function selectDate(iso) {
   selectedDate = iso;
+  haptic(6);
   // re-render selection without refetch
   document.querySelectorAll('.cal-cell').forEach((c) => {
     c.classList.toggle('selected', c.dataset.date === iso);
   });
   renderDetail();
+  // On mobile (single-column layout), bring the detail panel into view
+  if (window.matchMedia('(max-width: 880px)').matches) {
+    const detail = document.getElementById('calDetail');
+    if (detail) setTimeout(() => detail.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  }
 }
 
 function renderDetail() {

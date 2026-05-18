@@ -1,7 +1,7 @@
 // Pomodoro timer with wall-clock accuracy and auto-cycle.
 import { state } from './state.js';
 import * as repo from './repo.js';
-import { notify, fmtClock, pad, isoDate, emit, on } from './ui.js';
+import { notify, fmtClock, pad, isoDate, emit, on, haptic, acquireWakeLock, releaseWakeLock } from './ui.js';
 
 const CIRCUM = 2 * Math.PI * 68;
 const COLORS = { focus: '#4f8ef7', short: '#3ecf8e', long: '#f5a623' };
@@ -96,6 +96,8 @@ function toggleTimer() {
   if (running()) {
     pausedRemaining = remainingSec();
     startedAt = null;
+    haptic(5);
+    releaseWakeLock();
     render();
     return;
   }
@@ -103,6 +105,8 @@ function toggleTimer() {
   const baseRemaining = pausedRemaining != null ? pausedRemaining : durationSec;
   startedAt = Date.now() - (durationSec - baseRemaining) * 1000;
   pausedRemaining = null;
+  haptic(12);
+  acquireWakeLock();
   startLoop();
   render();
 }
@@ -112,11 +116,14 @@ function resetTimer() {
   pausedRemaining = null;
   durationSec = modes()[mode];
   stopLoop();
+  releaseWakeLock();
+  haptic(5);
   render();
 }
 
 async function finishSession() {
   stopLoop();
+  releaseWakeLock();
   const finishedMode = mode;
   const userId = state.user?.id;
   const startISO = new Date(startedAt || Date.now() - durationSec * 1000).toISOString();
@@ -132,6 +139,7 @@ async function finishSession() {
   }
 
   beep();
+  haptic([80, 40, 80, 40, 120]);
   if (finishedMode === 'focus') {
     notify('🍅 집중 완료! 잠깐 쉬어가세요.');
     addLog('집중', currentTask || '(할 일 없음)');

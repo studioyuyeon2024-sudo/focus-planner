@@ -6,15 +6,52 @@ import { mountAuth, signOut } from './auth.js';
 import { initPomodoro, setSoundEnabled, setAutoStart } from './pomodoro.js';
 import { initPlanner } from './planner.js';
 import { initCalendar } from './calendar.js';
-import { emit, on, notify } from './ui.js';
+import { emit, on, notify, haptic, withTransition } from './ui.js';
 
 const TABS = ['today', 'calendar', 'settings'];
 
-async function boot() {
-  // Tab switching
-  document.querySelectorAll('.tab').forEach((t) => {
-    t.addEventListener('click', () => switchTab(t.dataset.tab));
+// Service worker (PWA install + offline shell)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
   });
+}
+
+// Install prompt (Android/Chrome). iOS uses Share → Add to Home Screen.
+let deferredInstall = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstall = e;
+  const btn = document.getElementById('installBtn');
+  if (btn) btn.classList.add('show');
+});
+window.addEventListener('appinstalled', () => {
+  deferredInstall = null;
+  const btn = document.getElementById('installBtn');
+  if (btn) btn.classList.remove('show');
+  notify('홈 화면에 추가되었어요');
+});
+
+async function boot() {
+  // Tab switching — both top tabs (desktop) and bottom nav (mobile)
+  document.querySelectorAll('.tab, .bnav-btn').forEach((t) => {
+    t.addEventListener('click', () => {
+      haptic(6);
+      switchTab(t.dataset.tab);
+    });
+  });
+
+  // Install button
+  const installBtn = document.getElementById('installBtn');
+  if (installBtn) {
+    installBtn.addEventListener('click', async () => {
+      if (!deferredInstall) return;
+      deferredInstall.prompt();
+      try { await deferredInstall.userChoice; } catch {}
+      deferredInstall = null;
+      installBtn.classList.remove('show');
+    });
+  }
 
   // Auth check
   const { data: { session } } = await supabase.auth.getSession();
@@ -98,9 +135,13 @@ async function refreshStreak() {
 
 function switchTab(name) {
   if (!TABS.includes(name)) name = 'today';
-  document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === name));
-  document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === 'view' + cap(name)));
+  withTransition(() => {
+    document.querySelectorAll('.tab, .bnav-btn').forEach((t) => t.classList.toggle('active', t.dataset.tab === name));
+    document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === 'view' + cap(name)));
+  });
   history.replaceState(null, '', '#' + name);
+  // Scroll to top of new view on mobile
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function getInitialTab() {

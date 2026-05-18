@@ -2,8 +2,21 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0f0f11">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="뽀모도로 + 시간 블록 + 달력으로 하루 생산성을 끌어올리는 웹앱">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Focus">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+<link rel="apple-touch-icon" href="icons/icon.svg">
 <title>Focus Planner — 뽀모도로 + 시간 블록 + 달력</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Pretendard:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -25,7 +38,8 @@
     </nav>
     <div class="user-chip">
       <span id="streakChip" class="streak-chip" style="display:none"></span>
-      <span id="userEmail"></span>
+      <button id="installBtn" class="btn-install" type="button" aria-label="홈 화면에 추가">+ 설치</button>
+      <span id="userEmail" class="user-email"></span>
       <button id="logoutBtn" class="btn-logout" aria-label="로그아웃">로그아웃</button>
     </div>
   </header>
@@ -211,6 +225,33 @@
     </div>
   </main>
 
+</div>
+
+  <!-- Bottom tab bar (mobile) -->
+  <nav class="bottom-nav" aria-label="모바일 화면 전환">
+    <button class="bnav-btn active" data-tab="today" type="button" aria-label="오늘">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+      <span>오늘</span>
+    </button>
+    <button class="bnav-btn" data-tab="calendar" type="button" aria-label="달력">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+        <rect x="3.5" y="5" width="17" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M3.5 10h17M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+      <span>달력</span>
+    </button>
+    <button class="bnav-btn" data-tab="settings" type="button" aria-label="설정">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+        <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M12 3l1.2 2.4L16 5l-.4 2.6 2.4 1.2-1.5 2.2L18 13l-2.4 1.2L16 17l-2.6-.4-1.4 2.4-2.2-1.5L7 19l-1.2-2.4L3 16l.4-2.6L1 12.2l1.5-2.2L1 8l2.4-1.2L3 4l2.6.4L7 2l2.2 1.5z" fill="none" stroke="currentColor" stroke-width="0.8" opacity="0"/>
+        <path d="M12 2.5l1.8 2 2.5-.6.6 2.5 2 1.8-1.4 2.2 1.4 2.2-2 1.8-.6 2.5-2.5-.6L12 18.5l-1.8-2-2.5.6-.6-2.5-2-1.8 1.4-2.2L5.1 8.4l2-1.8.6-2.5 2.5.6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+      </svg>
+      <span>설정</span>
+    </button>
+  </nav>
 </div>
 
 <div class="notify" id="notify" role="status" aria-live="polite"></div>
