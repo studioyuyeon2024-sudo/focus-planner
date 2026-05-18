@@ -94,3 +94,42 @@ export function emit(event, payload) {
     try { fn(payload); } catch (e) { console.error(e); }
   });
 }
+
+// Haptic feedback (no-op on desktop / unsupported). Patterns in ms.
+export function haptic(pattern = 8) {
+  try {
+    if ('vibrate' in navigator) navigator.vibrate(pattern);
+  } catch {}
+}
+
+// View Transitions API helper (graceful fallback).
+export function withTransition(fn) {
+  if (document.startViewTransition) {
+    return document.startViewTransition(fn);
+  }
+  fn();
+  return null;
+}
+
+// Wake Lock manager — keeps screen on during focus sessions.
+let wakeLock = null;
+let wantWakeLock = false;
+export async function acquireWakeLock() {
+  wantWakeLock = true;
+  if (!('wakeLock' in navigator)) return;
+  if (wakeLock) return;
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', () => { wakeLock = null; });
+  } catch {}
+}
+export async function releaseWakeLock() {
+  wantWakeLock = false;
+  if (wakeLock) {
+    try { await wakeLock.release(); } catch {}
+    wakeLock = null;
+  }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && wantWakeLock && !wakeLock) acquireWakeLock();
+});

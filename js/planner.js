@@ -1,7 +1,7 @@
 // Today view: MITs (3 important tasks), time blocks, daily reflection.
 import { state } from './state.js';
 import * as repo from './repo.js';
-import { notify, toMins, fromMins, fmtDur, koDateLabel, isoDate, debounce, el, clear, on, emit } from './ui.js';
+import { notify, toMins, fromMins, fmtDur, koDateLabel, isoDate, debounce, el, clear, on, emit, haptic } from './ui.js';
 
 const HOUR_H = 44, START_H = 6, END_H = 24;
 const CAT_COLORS = { work: '#4f8ef7', personal: '#3ecf8e', rest: '#f5a623', etc: '#a78bfa' };
@@ -290,6 +290,7 @@ async function toggleMitDone(pos) {
     const saved = await repo.setMitDone(m.id, !m.done);
     const idx = state.mits.findIndex((x) => x.position === pos);
     state.mits[idx] = saved;
+    haptic(saved.done ? [10, 30, 20] : 5);
     renderMits();
     emit('mits:changed');
   } catch (e) { console.error(e); }

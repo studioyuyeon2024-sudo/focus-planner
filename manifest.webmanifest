@@ -1,0 +1,40 @@
+{
+  "name": "Focus Planner",
+  "short_name": "Focus",
+  "description": "뽀모도로 + 시간 블록 + 달력으로 하루를 잘 관리하세요",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#0f0f11",
+  "theme_color": "#0f0f11",
+  "orientation": "portrait",
+  "categories": ["productivity", "lifestyle"],
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "달력",
+      "short_name": "달력",
+      "url": "./#calendar"
+    },
+    {
+      "name": "설정",
+      "short_name": "설정",
+      "url": "./#settings"
+    }
+  ]
+}
