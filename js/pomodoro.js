@@ -2,7 +2,6 @@
 import { state } from './state.js';
 import * as repo from './repo.js';
 import { notify, fmtClock, pad, isoDate, emit, on, haptic, acquireWakeLock, releaseWakeLock } from './ui.js';
-import { triggerStartShortcut } from './integrations.js';
 
 const CIRCUM = 2 * Math.PI * 68;
 const COLORS = { focus: '#4f8ef7', short: '#3ecf8e', long: '#f5a623' };
@@ -103,7 +102,6 @@ function toggleTimer() {
     return;
   }
   // start or resume
-  const wasFresh = pausedRemaining == null;
   const baseRemaining = pausedRemaining != null ? pausedRemaining : durationSec;
   startedAt = Date.now() - (durationSec - baseRemaining) * 1000;
   pausedRemaining = null;
@@ -111,9 +109,6 @@ function toggleTimer() {
   acquireWakeLock();
   startLoop();
   render();
-  // Fire iOS Shortcut only on a fresh start (not on resume),
-  // so the iOS Timer reflects the actual remaining time the user sees.
-  if (wasFresh) triggerStartShortcut(mode, durationSec);
 }
 
 function resetTimer() {
@@ -239,11 +234,30 @@ function beep() {
   } catch (e) { /* ignore */ }
 }
 
-function webNotify(title, body) {
+async function webNotify(title, body) {
   if (!('Notification' in window)) return;
-  if (Notification.permission === 'granted') {
-    try { new Notification(title, { body, silent: true }); } catch (e) {}
-  }
+  if (Notification.permission !== 'granted') return;
+  const opts = {
+    body,
+    icon: 'icons/icon.svg',
+    badge: 'icons/icon.svg',
+    tag: 'fp-session',          // collapse duplicates
+    renotify: true,             // re-vibrate even if same tag
+    silent: true,               // no notification sound — only haptic
+    vibrate: [80, 40, 80, 40, 120],
+    requireInteraction: false,
+  };
+  // Prefer service worker so it works even in background / standalone PWA.
+  try {
+    if ('serviceWorker' in navigator) {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg && reg.showNotification) {
+        await reg.showNotification(title, opts);
+        return;
+      }
+    }
+    new Notification(title, opts);
+  } catch (e) { /* ignore */ }
 }
 
 async function loadTodaySummary() {

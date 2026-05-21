@@ -7,7 +7,6 @@ import { initPomodoro, setSoundEnabled, setAutoStart } from './pomodoro.js';
 import { initPlanner } from './planner.js';
 import { initCalendar } from './calendar.js';
 import { emit, on, notify, haptic, withTransition } from './ui.js';
-import { isIOS, shortcutSettings } from './integrations.js';
 
 const TABS = ['today', 'calendar', 'settings'];
 
@@ -167,8 +166,10 @@ function wireSettings() {
   });
   document.getElementById('exportBtn').addEventListener('click', () => exportData());
 
-  // iOS Shortcuts integration
-  wireShortcutSettings();
+  // Notification permission
+  document.getElementById('enableNotifBtn')?.addEventListener('click', () => requestNotifPermission());
+  document.getElementById('testNotifBtn')?.addEventListener('click', () => sendTestNotification());
+  updateNotifStatus();
 
   // Restore local prefs
   const s = localStorage.getItem('fp_sound');
@@ -183,33 +184,66 @@ function wireSettings() {
   }
 }
 
-function wireShortcutSettings() {
-  const section = document.getElementById('iosShortcutSection');
-  const enabledEl = document.getElementById('shortcutEnabled');
-  const focusNameEl = document.getElementById('shortcutFocusName');
-  const breakEnabledEl = document.getElementById('shortcutBreakEnabled');
-  const breakNameEl = document.getElementById('shortcutBreakName');
-
-  // Hide entire section on non-iOS — feature is iOS-only.
-  if (!isIOS()) {
-    section.style.opacity = '0.55';
-    section.title = 'iOS 기기에서만 동작합니다';
+// ===== Notifications =====
+function updateNotifStatus() {
+  const status = document.getElementById('notifStatus');
+  const enable = document.getElementById('enableNotifBtn');
+  const test = document.getElementById('testNotifBtn');
+  if (!status) return;
+  if (!('Notification' in window)) {
+    status.textContent = '이 브라우저는 알림을 지원하지 않아요';
+    if (enable) enable.style.display = 'none';
+    if (test) test.style.display = 'none';
+    return;
   }
+  const p = Notification.permission;
+  if (p === 'granted') {
+    status.textContent = '✓ 허용됨';
+    status.style.color = 'var(--green)';
+    if (enable) enable.style.display = 'none';
+    if (test) test.style.display = '';
+  } else if (p === 'denied') {
+    status.textContent = '차단됨 — 브라우저 설정에서 허용으로 바꿔주세요';
+    status.style.color = 'var(--red)';
+    if (enable) enable.style.display = 'none';
+    if (test) test.style.display = 'none';
+  } else {
+    status.textContent = '대기 중 — 허용 버튼을 눌러주세요';
+    status.style.color = 'var(--muted)';
+    if (enable) enable.style.display = '';
+    if (test) test.style.display = 'none';
+  }
+}
 
-  // Load
-  enabledEl.checked = shortcutSettings.enabled;
-  focusNameEl.value = shortcutSettings.focusName;
-  breakEnabledEl.checked = shortcutSettings.breakEnabled;
-  breakNameEl.value = shortcutSettings.breakName;
+async function requestNotifPermission() {
+  if (!('Notification' in window)) return;
+  try {
+    const res = await Notification.requestPermission();
+    updateNotifStatus();
+    if (res === 'granted') notify('알림 허용 완료 — 시계로도 갈 거예요');
+    else if (res === 'denied') notify('알림 차단됨 — 브라우저 설정에서 허용 필요');
+  } catch (e) { console.error(e); }
+}
 
-  // Save on change
-  enabledEl.addEventListener('change', () => {
-    shortcutSettings.enabled = enabledEl.checked;
-    if (enabledEl.checked && !isIOS()) notify('이 기능은 iOS에서만 동작해요');
-  });
-  focusNameEl.addEventListener('change', () => { shortcutSettings.focusName = focusNameEl.value.trim(); });
-  breakEnabledEl.addEventListener('change', () => { shortcutSettings.breakEnabled = breakEnabledEl.checked; });
-  breakNameEl.addEventListener('change', () => { shortcutSettings.breakName = breakNameEl.value.trim(); });
+async function sendTestNotification() {
+  if (Notification.permission !== 'granted') return;
+  const opts = {
+    body: '시계에도 진동과 함께 떠야 정상이에요',
+    icon: 'icons/icon.svg',
+    badge: 'icons/icon.svg',
+    tag: 'fp-test',
+    renotify: true,
+    silent: true,
+    vibrate: [80, 40, 80, 40, 120],
+  };
+  try {
+    if ('serviceWorker' in navigator) {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg?.showNotification) { await reg.showNotification('🔔 테스트 알림', opts); return; }
+    }
+    new Notification('🔔 테스트 알림', opts);
+  } catch (e) { console.error(e); }
+  haptic([80, 40, 80, 40, 120]);
 }
 
 function applyProfileToSettings() {
