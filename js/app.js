@@ -227,8 +227,18 @@ async function requestNotifPermission() {
 
 async function sendTestNotification() {
   if (Notification.permission !== 'granted') return;
+  const btn = document.getElementById('testNotifBtn');
+  if (!btn) return;
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  // 5-second countdown — gives user time to lock the phone so iOS mirrors to Watch.
+  notify('5초 안에 폰을 잠그세요. 시계로 갑니다 ⌚');
+  for (let i = 5; i > 0; i--) {
+    btn.textContent = `${i}초…`;
+    await new Promise((r) => setTimeout(r, 1000));
+  }
   const opts = {
-    body: '시계에도 진동과 함께 떠야 정상이에요',
+    body: '시계에 진동과 함께 떠야 정상이에요',
     icon: 'icons/icon.svg',
     badge: 'icons/icon.svg',
     tag: 'fp-test',
@@ -239,11 +249,15 @@ async function sendTestNotification() {
   try {
     if ('serviceWorker' in navigator) {
       const reg = await navigator.serviceWorker.getRegistration();
-      if (reg?.showNotification) { await reg.showNotification('🔔 테스트 알림', opts); return; }
+      if (reg?.showNotification) { await reg.showNotification('🔔 테스트 알림', opts); }
+      else { new Notification('🔔 테스트 알림', opts); }
+    } else {
+      new Notification('🔔 테스트 알림', opts);
     }
-    new Notification('🔔 테스트 알림', opts);
   } catch (e) { console.error(e); }
   haptic([80, 40, 80, 40, 120]);
+  btn.textContent = originalText;
+  btn.disabled = false;
 }
 
 function applyProfileToSettings() {
