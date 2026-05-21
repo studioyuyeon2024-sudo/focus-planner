@@ -2,6 +2,7 @@
 import { state } from './state.js';
 import * as repo from './repo.js';
 import { notify, fmtClock, pad, isoDate, emit, on, haptic, acquireWakeLock, releaseWakeLock } from './ui.js';
+import { triggerStartShortcut } from './integrations.js';
 
 const CIRCUM = 2 * Math.PI * 68;
 const COLORS = { focus: '#4f8ef7', short: '#3ecf8e', long: '#f5a623' };
@@ -102,6 +103,7 @@ function toggleTimer() {
     return;
   }
   // start or resume
+  const wasFresh = pausedRemaining == null;
   const baseRemaining = pausedRemaining != null ? pausedRemaining : durationSec;
   startedAt = Date.now() - (durationSec - baseRemaining) * 1000;
   pausedRemaining = null;
@@ -109,6 +111,9 @@ function toggleTimer() {
   acquireWakeLock();
   startLoop();
   render();
+  // Fire iOS Shortcut only on a fresh start (not on resume),
+  // so the iOS Timer reflects the actual remaining time the user sees.
+  if (wasFresh) triggerStartShortcut(mode, durationSec);
 }
 
 function resetTimer() {

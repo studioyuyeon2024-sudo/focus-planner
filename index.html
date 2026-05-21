@@ -206,6 +206,38 @@
         <div class="setting-row"><label for="soundToggle">소리 알림</label><input type="checkbox" id="soundToggle" checked></div>
         <div class="setting-row"><label for="autoStartToggle">세션 끝나면 자동으로 다음 시작</label><input type="checkbox" id="autoStartToggle" checked></div>
       </div>
+
+      <div class="setting-section" id="iosShortcutSection">
+        <div class="setting-title">Apple Watch · iOS 단축어 연동</div>
+        <div class="setting-row">
+          <label for="shortcutEnabled">시작할 때 iOS 단축어 실행 (시계에 카운트다운)</label>
+          <input type="checkbox" id="shortcutEnabled">
+        </div>
+        <div class="setting-row">
+          <label for="shortcutFocusName">집중 단축어 이름</label>
+          <input type="text" id="shortcutFocusName" placeholder="Focus Start" style="font-family:var(--mono);min-height:40px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);width:160px">
+        </div>
+        <div class="setting-row">
+          <label for="shortcutBreakEnabled">휴식 시작 시에도 단축어 실행</label>
+          <input type="checkbox" id="shortcutBreakEnabled">
+        </div>
+        <div class="setting-row">
+          <label for="shortcutBreakName">휴식 단축어 이름</label>
+          <input type="text" id="shortcutBreakName" placeholder="Break Start" style="font-family:var(--mono);min-height:40px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);width:160px">
+        </div>
+        <details style="margin-top:8px">
+          <summary style="cursor:pointer;font-size:12px;color:var(--muted);font-family:var(--mono)">단축어 만드는 방법 (펼치기)</summary>
+          <div style="font-size:13px;color:var(--text);line-height:1.6;padding:12px 4px 0;display:flex;flex-direction:column;gap:8px">
+            <div><strong>준비물</strong>: iPhone · iOS 16 이상 (Apple Watch는 같은 iCloud로 페어링되어 있으면 자동 연동)</div>
+            <div><strong>① 집중 단축어 만들기</strong></div>
+            <div style="color:var(--muted);padding-left:8px">1. iPhone에서 <em>단축어</em> 앱 열기<br>2. 우측 상단 <strong>+</strong> 누르고 <em>새 단축어</em><br>3. <em>작업 추가</em> → <strong>"타이머 시작"</strong> 검색해서 추가<br>4. 지속 시간을 <em>지름길 입력</em>(또는 25분 고정)으로 설정<br>5. 우측 상단 ⓘ → <em>이름</em>을 <strong>Focus Start</strong>로 (위 입력칸과 정확히 일치해야 함)<br>6. 완료</div>
+            <div><strong>② 휴식 단축어도 같은 방식</strong> (이름: <strong>Break Start</strong>)</div>
+            <div><strong>③ 첫 사용 시 권한 허용</strong>: 우리 앱에서 시작 버튼 누르면 iOS가 "이 단축어를 실행할까요?"라고 한 번 물어봄 → <em>매번 묻지 않음 + 허용</em> 선택</div>
+            <div style="color:var(--green)"><strong>결과</strong>: 우리 앱의 [시작] = iOS 기본 타이머 시작 = Apple Watch에 25:00 카운트다운 표시</div>
+            <div style="color:var(--faint);font-size:11px">tip · 시계에서 직접 시작·정지하면 우리 앱과 따로 돌아갑니다. 시계는 보기·알림 전용, 정지/리셋은 폰의 우리 앱에서 하시는 게 깔끔해요.</div>
+          </div>
+        </details>
+      </div>
       <div class="setting-section">
         <div class="setting-title">데이터</div>
         <div class="setting-row">

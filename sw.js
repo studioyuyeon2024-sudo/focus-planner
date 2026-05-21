@@ -5,7 +5,7 @@
 //   - Supabase API → network-only (always fresh, requires auth)
 //   - Everything else (Google Fonts, etc) → stale-while-revalidate
 
-const CACHE = 'fp-v1';
+const CACHE = 'fp-v2';
 const SHELL = [
   './',
   './index.html',
@@ -19,6 +19,7 @@ const SHELL = [
   './js/pomodoro.js',
   './js/planner.js',
   './js/calendar.js',
+  './js/integrations.js',
   './manifest.webmanifest',
   './icons/icon.svg',
   './icons/maskable.svg',

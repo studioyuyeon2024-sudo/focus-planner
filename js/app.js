@@ -7,6 +7,7 @@ import { initPomodoro, setSoundEnabled, setAutoStart } from './pomodoro.js';
 import { initPlanner } from './planner.js';
 import { initCalendar } from './calendar.js';
 import { emit, on, notify, haptic, withTransition } from './ui.js';
+import { isIOS, shortcutSettings } from './integrations.js';
 
 const TABS = ['today', 'calendar', 'settings'];
 
@@ -166,6 +167,9 @@ function wireSettings() {
   });
   document.getElementById('exportBtn').addEventListener('click', () => exportData());
 
+  // iOS Shortcuts integration
+  wireShortcutSettings();
+
   // Restore local prefs
   const s = localStorage.getItem('fp_sound');
   const a = localStorage.getItem('fp_autostart');
@@ -177,6 +181,35 @@ function wireSettings() {
     document.getElementById('autoStartToggle').checked = a === '1';
     setAutoStart(a === '1');
   }
+}
+
+function wireShortcutSettings() {
+  const section = document.getElementById('iosShortcutSection');
+  const enabledEl = document.getElementById('shortcutEnabled');
+  const focusNameEl = document.getElementById('shortcutFocusName');
+  const breakEnabledEl = document.getElementById('shortcutBreakEnabled');
+  const breakNameEl = document.getElementById('shortcutBreakName');
+
+  // Hide entire section on non-iOS — feature is iOS-only.
+  if (!isIOS()) {
+    section.style.opacity = '0.55';
+    section.title = 'iOS 기기에서만 동작합니다';
+  }
+
+  // Load
+  enabledEl.checked = shortcutSettings.enabled;
+  focusNameEl.value = shortcutSettings.focusName;
+  breakEnabledEl.checked = shortcutSettings.breakEnabled;
+  breakNameEl.value = shortcutSettings.breakName;
+
+  // Save on change
+  enabledEl.addEventListener('change', () => {
+    shortcutSettings.enabled = enabledEl.checked;
+    if (enabledEl.checked && !isIOS()) notify('이 기능은 iOS에서만 동작해요');
+  });
+  focusNameEl.addEventListener('change', () => { shortcutSettings.focusName = focusNameEl.value.trim(); });
+  breakEnabledEl.addEventListener('change', () => { shortcutSettings.breakEnabled = breakEnabledEl.checked; });
+  breakNameEl.addEventListener('change', () => { shortcutSettings.breakName = breakNameEl.value.trim(); });
 }
 
 function applyProfileToSettings() {
